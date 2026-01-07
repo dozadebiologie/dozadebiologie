@@ -1,0 +1,1 @@
+// Acest fișier nu mai este utilizat. Toată logica a fost mutată în index.html pentru a permite rularea pe GitHub Pages ca o singură pagină statică.

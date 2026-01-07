@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dozadebiologie - Admitere Medicină</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: white;
+            scroll-behavior: smooth;
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zoomInSoft {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-up { animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
+        .animate-zoom { animation: zoomInSoft 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
+        .animate-fade-down { animation: fadeInDown 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0; }
+
+        /* Flashcard Flip */
+        .perspective { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .flip-card-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .flipped { transform: rotateY(180deg); }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Navigație Persistentă -->
+        <nav id="navbar" class="fixed top-4 left-1/2 -translate-x-1/2 lg:translate-x-0 lg:left-auto lg:top-8 lg:right-10 z-[1000] flex items-center justify-center lg:justify-start gap-3 md:gap-5 px-4 md:px-7 py-3 rounded-full glass-nav shadow-lg transition-all hover:shadow-xl w-[94%] max-w-2xl lg:w-auto hidden">
+            <!-- Injectat de JS -->
+        </nav>
+
+        <div id="floating-avatar" class="fixed top-4 right-4 lg:top-8 lg:right-10 z-[1100] hidden">
+            <!-- Injectat de JS -->
+        </div>
+
+        <!-- Conținut Dinamic -->
+        <main id="main-content"></main>
+    </div>
+
+    <script>
+        // --- DATE APLICAȚIE ---
+        const DNA_LOGO = "https://dozadebiologie.wordpress.com/wp-content/uploads/2023/02/2.profil.png";
+        const CHAPTERS = [
+            "Celule, țesuturi, organe, sisteme de organe, organism",
+            "Celula", "Țesuturile", "Sistemul nervos", "Analizatorii", "Glande endocrine",
+            "Mișcarea - sistemul osos", "Mișcarea - sistemul muscular", "Digestia și absorbția",
+            "Circulația", "Respirația", "Excreția", "Metabolismul", "Funcția de reproducere"
+        ];
+        const FLASHCARDS_RAW = `Care sunt nivelele de organizare a corpului uman, începând de la celule?|Celule → Țesuturi → Organe → Sisteme de organe.
+Care sunt principalele funcții ale organismului asigurate de sistemele de organe?|Funcțiile de relație (interacțiune cu mediul), nutriție și reproducere.
+Cum funcționează organele în corpul uman?|Organele funcționează în strânsă corelație unele cu altele, nu izolat.
+Care sunt cele patru segmente principale în care este împărțit corpul uman?|Cap, gât, trunchi și membre.
+Ce constituie împreună extremitatea cefalică a corpului uman?|Capul și gâtul.
+În câte părți este structurat capul și cum se numesc acestea?|Capul este structurat în două părți: cea craniană (neurocraniu sau cutia craniană) și cea facială (viscerocraniu sau fața).
+Care este funcția principală a gâtului?|Gâtul face legătura între cap și trunchi.
+Ce tipuri de componente se remarcă la nivelul gâtului?|Componente de natură somatică (oase, mușchi, articulații) și organe interne sau viscere (laringe, esofag, trahee, paratiroide, tiroida).
+În ce trei diviziuni principale se împarte trunchiul?|Torace, abdomen și pelvis.
+Ce rol au diviziunile trunchiului (torace, abdomen, pelvis)?|Ele delimitează la interior cavitățile cu același nume (cavitățile toracică, abdominală și pelviană) care adăpostesc organe interne (viscere).
+Ce mușchi desparte cavitatea toracică de cea abdominală?|Mușchiul diafragm.
+Cum este delimitată inferior cavitatea abdominală?|Cavitatea abdominală este delimitată inferior de cavitatea pelviană.
+Ce mușchi limitează inferior cavitatea pelviană?|Diafragma perineală.
+Ce structuri adăpostește cavitatea toracică, privită în plan frontal anterior?|Mediastinul, cavitățile pleurală și cavitatea pericardială.
+Care sunt cele nouă subdiviziuni (regiuni) ale cavității abdominale?|Hipocondru drept, Epigastru, Hipocondru stâng, Abdomen lateral drept, Periombilical (mezogastru), Abdomen lateral stâng, Inghinal drept, Hipogastru, Inghinal stâng.
+Ce organe se găsesc predominant în regiunea epigastrică a abdomenului?|Porțiunea de mijloc a ficatului, o parte din colonul transvers, vezica biliară și stomacul.
+Ce organe se găsesc predominant în hipocondrul stâng?|O parte din lobul stâng al ficatului, stomacul, flexura colică stângă (flexura splenică).
+Ce organe predomină în regiunea periombilicală (mezogastru)?|Colonul transvers și cea mai mare parte din intestinul subțire.
+Unde se află o parte din lobul drept al ficatului în cavitatea abdominală?|În hipocondrul drept.
+Care sunt cele trei segmente ale membrelor superioare?|Braț, antebraț și mână.
+Care sunt cele trei segmente ale membrelor inferioare?|Coapsă, gambă și picior.
+Prin ce structură se fixează membrele superioare la nivelul trunchiului?|Prin centura scapulară (centura pectorală).
+Prin ce structură se fixează membrele inferioare la nivelul trunchiului?|Prin centura pelviană.
+De ce se recurge la axe și planuri în descrierea anatomică a corpului uman?|Pentru precizarea poziției segmentelor corpului și a elementelor ce intră în alcătuirea fiecărui organ.
+Ce principiu de alcătuire are corpul omenesc și câte axe și planuri are?|Corpul omenesc este alcătuit după principiul simetriei bilaterale, fiind un corp tridimensional, cu 3 axe și 3 planuri.
+Cum se întretaie axele corpului uman?|În unghi drept.
+Descrie axul longitudinal al corpului uman, inclusiv polii săi. (Axul lungimii corpului)|Axul longitudinal este vertical, delimitat de polul superior (cranial) și polul inferior (caudal), fiind cuprins între creștetul capului și tălpile picioarelor.
+Descrie axul sagital al corpului uman, inclusiv polii săi. (Axul anteroposterior)|Axul sagital este axul care descrie grosimea corpului, delimitat de polul anterior și polul posterior.
+Descrie axul transversal al corpului uman, inclusiv polii săi. (Axul orizontal)|Axul transversal este orizontal, caracterizează lățimea corpului și prezintă un pol stâng și unul drept.
+Câte axe traversează fiecare plan al corpului omenesc?|Câte două dintre cele trei axe menționate (longitudinal, sagital, transversal).
+Ce axe traversează planul sagital?|Axul sagital și axul longitudinal.
+Ce este planul medio-sagital și cum mai este denumit?|Este planul care împarte corpul în două jumătăți simetrice, trecând prin mijlocul acestuia; este numit și planul simetriei bilaterale.
+Ce axe traversează planul frontal?|Axul longitudinal și axul transversal.
+Cum împarte planul frontal corpul și cu ce structură este paralel?|Planul frontal este paralel cu fruntea și împarte corpul într-o parte anterioară (ventrală) și una posterioară (dorsală).
+Ce axe traversează planul transversal (orizontal)?|Axul sagital și axul transversal.
+Cum mai este numit planul transversal (orizontal) și cum împarte corpul?|Este numit planul metameriei corpului și împarte corpul într-o zonă superioară (cranială) și una inferioară (caudală).
+Ce termen descrie, pentru membre, formațiunile mai apropiate de centuri (scapulară/pelviană)?|Proximal.
+Ce termen descrie, pentru membre, formațiunile mai îndepărtate de centuri (scapulară/pelviană)?|Distal.
+Ce termeni se folosesc pentru a descrie formațiunile de la nivelul palmei?|Volar sau palmar.
+Ce termen se folosește pentru a descrie formațiunile de la nivelul tălpii piciorului?|Plantar.
+Ce termen se folosește pentru a descrie formațiunile de pe suprafața superioară a labei piciorului?|Dorsal.
+Ce termeni se folosesc pentru a descrie gradul de apropiere de suprafața corpului?|Superficial și profund.`;
+
+        // --- STARE GLOBALĂ ---
+        let state = {
+            view: 'home', // 'home', 'about', 'flashcards', 'flashcards-view', 'courses', 'course-view', 'teachers', 'contact', 'login', 'account'
+            user: JSON.parse(localStorage.getItem('eduvia_user')) || null,
+            flashcards: {
+                chapterId: 1,
+                deck: [],
+                scheduled: [],
+                currentIndex: 0,
+                learnedCount: 0,
+                isFlipped: false
+            },
+            course: {
+                lessonIndex: 0
+            }
+        };
+
+        // --- LOGICĂ RUTARE ---
+        function navigateTo(view, params = {}) {
+            state.view = view;
+            if (view === 'flashcards-view') {
+                state.flashcards.chapterId = params.id || 1;
+                initFlashcards();
+            }
+            if (['flashcards-view', 'course-view', 'account'].includes(view) && !state.user) {
+                state.view = 'login';
+            }
+            render();
+            window.scrollTo(0, 0);
+        }
+
+        function initFlashcards() {
+            if (state.flashcards.chapterId == 1) {
+                state.flashcards.deck = FLASHCARDS_RAW.split('\n').map(line => {
+                    const [q, a] = line.split('|');
+                    return { question: q, answer: a };
+                });
+                state.flashcards.currentIndex = 0;
+                state.flashcards.learnedCount = 0;
+                state.flashcards.scheduled = [];
+                state.flashcards.isFlipped = false;
+            }
+        }
+
+        // --- LOGIN / LOGOUT ---
+        window.handleGoogleResponse = (response) => {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            state.user = {
+                name: payload.name,
+                email: payload.email,
+                picture: payload.picture,
+                initials: payload.name.split(' ').map(n => n[0]).join('').toUpperCase()
+            };
+            localStorage.setItem('eduvia_user', JSON.stringify(state.user));
+            navigateTo('home');
+        };
+
+        function demoLogin() {
+            state.user = { name: "Utilizator Demo", email: "demo@doza.ro", initials: "UD", picture: null };
+            localStorage.setItem('eduvia_user', JSON.stringify(state.user));
+            navigateTo('home');
+        }
+
+        function logout() {
+            state.user = null;
+            localStorage.removeItem('eduvia_user');
+            navigateTo('home');
+        }
+
+        // --- RENDERER ---
+        function render() {
+            const main = document.getElementById('main-content');
+            const nav = document.getElementById('navbar');
+            const avatar = document.getElementById('floating-avatar');
+
+            // Navigație
+            const isMinimal = ['flashcards-view', 'course-view', 'login'].includes(state.view);
+            if (isMinimal) {
+                nav.classList.add('hidden');
+                avatar.classList.add('hidden');
+            } else {
+                nav.classList.remove('hidden');
+                renderNavbar();
+                if (state.user) {
+                    avatar.classList.remove('hidden');
+                    avatar.innerHTML = `
+                        <button onclick="navigateTo('account')" class="w-10 h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden border-2 border-white shadow-xl hover:scale-110 transition-transform animate-fade-down">
+                            ${state.user.picture ? `<img src="${state.user.picture}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">${state.user.initials}</div>`}
+                        </button>`;
+                } else {
+                    avatar.classList.add('hidden');
+                }
+            }
+
+            // Pagini
+            switch(state.view) {
+                case 'home': main.innerHTML = viewHome(); break;
+                case 'about': main.innerHTML = viewAbout(); break;
+                case 'flashcards': main.innerHTML = viewFlashcardsList(); break;
+                case 'flashcards-view': main.innerHTML = viewFlashcardsStudy(); break;
+                case 'courses': main.innerHTML = viewCourses(); break;
+                case 'course-view': main.innerHTML = viewCoursePlayer(); break;
+                case 'teachers': main.innerHTML = viewTeachers(); break;
+                case 'contact': main.innerHTML = viewContact(); break;
+                case 'login': main.innerHTML = viewLogin(); break;
+                case 'account': main.innerHTML = viewAccount(); break;
+            }
+
+            if (state.view === 'login') {
+                setTimeout(() => {
+                    google.accounts.id.initialize({
+                        client_id: "307114630478-bi9c64qthev5apihc4jjmid9lo27o38r.apps.googleusercontent.com",
+                        callback: window.handleGoogleResponse
+                    });
+                    google.accounts.id.renderButton(document.getElementById("google-btn"), { theme: "outline", size: "large", width: "100%", shape: "pill" });
+                }, 100);
+            }
+        }
+
+        function renderNavbar() {
+            const nav = document.getElementById('navbar');
+            const links = [
+                { name: 'Acasă', view: 'home' },
+                { name: 'Flashcarduri', view: 'flashcards' },
+                { name: 'Cursuri', view: 'courses' },
+                { name: 'Profesori', view: 'teachers' },
+                { name: 'Contact', view: 'contact' },
+            ];
+            nav.innerHTML = `
+                <div class="flex items-center gap-3 md:gap-5 overflow-x-auto no-scrollbar scroll-smooth">
+                    ${links.map(l => `<button onclick="navigateTo('${l.view}')" class="text-[11px] md:text-sm transition-colors ${state.view === l.view ? 'text-blue-500 font-bold' : 'text-gray-600 hover:text-black'}">${l.name}</button>`).join('')}
+                </div>
+                ${!state.user ? `
+                    <div class="flex items-center gap-2 border-l border-gray-200 pl-4 ml-1">
+                        <button onclick="navigateTo('login')" class="text-xs font-medium text-gray-600 hover:text-black">Logare</button>
+                        <button onclick="navigateTo('login')" class="bg-[#72f68b] px-4 py-2 rounded-full text-xs font-bold text-black shadow-sm border border-[#5ee477]">Înregistrare</button>
+                    </div>
+                ` : `<button onclick="navigateTo('account')" class="lg:hidden text-xs font-bold text-blue-500 ml-2">${state.user.name.split(' ')[0]}</button>`}
+            `;
+        }
+
+        // --- TEMPLATES PAGINI ---
+
+        function viewHome() {
+            return `
+            <div class="flex flex-col lg:flex-row min-h-screen">
+                <div class="lg:w-1/2 p-10 pt-32 lg:p-20 flex flex-col justify-center animate-fade-up">
+                    <div class="mb-16"><img src="${DNA_LOGO}" class="h-12 w-auto mb-4"><h1 class="text-3xl font-bold tracking-tight">dozadebiologie</h1></div>
+                    <h2 class="text-5xl lg:text-6xl font-normal leading-[1.1] mb-8 text-slate-900">Drumul tău spre<br />medicină începe acum.</h2>
+                    <p class="text-gray-500 text-lg mb-10 leading-relaxed max-w-xl">Pregătește-te structurat, înțelege materia în profunzime și transformă-ți visul în realitate.</p>
+                    <div><button onclick="navigateTo('contact')" class="bg-[#72f68b] text-black px-10 py-4 rounded-full font-bold shadow-md hover:scale-105 transition-transform">Începe acum</button></div>
+                </div>
+                <div class="hidden lg:block lg:w-1/2 bg-black relative"><div class="absolute inset-0 bg-cover bg-center animate-zoom" style="background-image: url('https://images.unsplash.com/photo-1767536091842-ab3ac829c08d?q=80&w=1200&auto=format&fit=crop')"></div></div>
+            </div>`;
+        }
+
+        function viewAbout() {
+            return `<div class="p-20 pt-40 max-w-4xl mx-auto animate-fade-up">
+                <h1 class="text-6xl font-bold mb-10">Despre noi.</h1>
+                <p class="text-xl text-gray-600 leading-relaxed mb-8">dozadebiologie a fost fondată în ianuarie 2026 pentru a face pregătirea pentru Medicină mai accesibilă.</p>
+                <p class="text-xl text-gray-600 leading-relaxed mb-8">Oferim materiale video și flashcarduri create de medici rezidenți și profesori de elită.</p>
+                <button onclick="navigateTo('home')" class="bg-black text-white px-8 py-3 rounded-lg font-bold">Înapoi</button>
+            </div>`;
+        }
+
+        function viewFlashcardsList() {
+            return `<div class="pt-32 pb-20 px-10 max-w-7xl mx-auto animate-fade-up">
+                <h2 class="text-5xl font-bold mb-12">Flashcarduri Interactive</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    ${CHAPTERS.map((ch, i) => `
+                        <div onclick="navigateTo('flashcards-view', {id: ${i+1}})" class="group p-8 rounded-[32px] border bg-white hover:shadow-2xl transition-all cursor-pointer ${i!==0 ? 'opacity-50 grayscale pointer-events-none' : ''}">
+                            <div class="flex justify-between items-center mb-6"><span class="text-[10px] font-bold uppercase tracking-widest bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full">Capitolul ${i+1}</span></div>
+                            <h3 class="text-xl font-bold mb-8 h-16">${ch}</h3>
+                            <p class="text-sm font-bold text-gray-400 group-hover:text-black transition-colors">${i===0 ? 'Începe acum →' : 'În curând'}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        function viewFlashcardsStudy() {
+            const f = state.flashcards;
+            const current = f.deck[f.currentIndex];
+            if (!current) return `<div class="flex items-center justify-center h-screen"><p>Finalizat! <button onclick="initFlashcards(); render()">Reset</button></p></div>`;
+
+            return `
+            <div class="flex flex-col min-h-screen bg-[#F8F9FA]">
+                <div class="bg-white border-b px-8 py-4 flex items-center justify-between"><button onclick="navigateTo('flashcards')" class="font-bold flex items-center gap-2"><img src="${DNA_LOGO}" class="w-6 h-6"> dozadebiologie</button><div class="text-xs font-bold text-gray-400">Progres: ${f.learnedCount} / 42</div></div>
+                <main class="flex-1 flex flex-col items-center justify-center p-6 animate-fade-up">
+                    <div class="max-w-4xl w-full text-center">
+                        <h2 class="text-3xl font-bold text-slate-800 mb-12">${CHAPTERS[f.chapterId-1]}</h2>
+                        <div class="flex items-center justify-center gap-10">
+                            <button onclick="flashAction('prev')" class="w-14 h-14 bg-white rounded-full shadow hover:scale-110 active:scale-90 transition-all">←</button>
+                            <div class="flex-1 max-w-2xl perspective" onclick="flashAction('flip')">
+                                <div class="relative h-[400px] w-full cursor-pointer flip-card-inner preserve-3d ${f.isFlipped ? 'flipped' : ''}">
+                                    <div class="absolute inset-0 bg-white p-12 rounded-[40px] shadow-2xl border flex items-center justify-center backface-hidden"><p class="text-2xl font-semibold">${current.question}</p></div>
+                                    <div class="absolute inset-0 bg-blue-50 p-12 rounded-[40px] shadow-2xl border flex flex-col items-center justify-center backface-hidden [transform:rotateY(180deg)]">
+                                        <p class="text-xl text-blue-900 mb-10 overflow-y-auto no-scrollbar">${current.answer}</p>
+                                        <div class="flex gap-4 w-full mt-auto">
+                                            <button onclick="flashAction('learned', event)" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold shadow-lg">Reținut</button>
+                                            <button onclick="flashAction('forgot', event)" class="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg">Uitat</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="flashAction('next')" class="w-14 h-14 bg-white rounded-full shadow hover:scale-110 active:scale-90 transition-all">→</button>
+                        </div>
+                    </div>
+                </main>
+            </div>`;
+        }
+
+        window.flashAction = (type, e) => {
+            if (e) e.stopPropagation();
+            const f = state.flashcards;
+            if (type === 'flip') f.isFlipped = !f.isFlipped;
+            if (type === 'next') { f.currentIndex = (f.currentIndex + 1) % f.deck.length; f.isFlipped = false; }
+            if (type === 'prev') { f.currentIndex = (f.currentIndex - 1 + f.deck.length) % f.deck.length; f.isFlipped = false; }
+            if (type === 'learned') {
+                f.learnedCount++;
+                f.deck = f.deck.filter((_, i) => i !== f.currentIndex);
+                if (f.deck.length > 0) f.currentIndex %= f.deck.length;
+                f.isFlipped = false;
+            }
+            if (type === 'forgot') {
+                const card = f.deck[f.currentIndex];
+                f.scheduled.push({ card, time: Date.now() + 5 * 60 * 1000 });
+                f.deck = f.deck.filter((_, i) => i !== f.currentIndex);
+                if (f.deck.length > 0) f.currentIndex %= f.deck.length;
+                f.isFlipped = false;
+            }
+            render();
+        };
+
+        function viewCourses() {
+            return `<div class="pt-32 px-10 max-w-7xl mx-auto animate-fade-up">
+                <h2 class="text-5xl font-bold mb-12">Cursuri Video</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div onclick="navigateTo('course-view')" class="group cursor-pointer bg-white p-4 border rounded-3xl hover:shadow-xl transition-all">
+                        <img src="https://edituracorint.ro/pub/media/catalog/product/cache/6675ff74a1d8426a9a906824e3cf45ba/m/a/manual_biologie_xi_cristescu_3.jpg" class="w-full h-64 object-contain mb-4">
+                        <h3 class="text-xl font-bold">Biologie - Corint</h3>
+                        <p class="text-sm text-gray-400">Începe lecțiile →</p>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function viewCoursePlayer() {
+            const lessons = ["Introducere", "Celula", "Membrana", "Organite", "Metabolism"];
+            const vids = ["pKhEAryIiDI", "7X8vP7o6XoI", "8O6vL9o9XoI", "9P7vM1o1XoI", "0Q6vR2o2XoI"];
+            const idx = state.course.lessonIndex;
+            const noteKey = `notes_${state.user.email}_${idx}`;
+            const currentNote = localStorage.getItem(noteKey) || "";
+
+            return `
+            <div class="flex flex-col h-screen bg-[#F8F9FA]">
+                <div class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm">
+                    <button onclick="navigateTo('courses')" class="font-bold flex items-center gap-2"><img src="${DNA_LOGO}" class="w-6 h-6"> dozadebiologie</button>
+                    <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-600">${state.user.initials}</div>
+                </div>
+                <div class="flex flex-1 overflow-hidden">
+                    <aside class="w-72 bg-white border-r p-6 hidden md:block">
+                        <h3 class="font-bold mb-6">Programa</h3>
+                        ${lessons.map((l, i) => `<button onclick="setLesson(${i})" class="w-full text-left p-4 rounded-xl mb-2 text-sm ${idx===i ? 'bg-blue-50 text-blue-600 font-bold' : 'text-gray-500 hover:bg-gray-50'}">${l}</button>`).join('')}
+                    </aside>
+                    <main class="flex-1 p-12 overflow-y-auto">
+                        <div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-10">
+                            <div class="flex-1">
+                                <h1 class="text-3xl font-bold mb-8">${lessons[idx]}</h1>
+                                <div class="aspect-video bg-black rounded-[40px] overflow-hidden shadow-2xl mb-8 border-8 border-white"><iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/${vids[idx]}" allowfullscreen></iframe></div>
+                                <div class="flex gap-4"><button onclick="setLesson(${idx-1})" class="px-8 py-4 bg-white rounded-full border shadow-sm">Anterior</button><button onclick="setLesson(${idx+1})" class="px-10 py-4 bg-black text-white rounded-full shadow-lg">Următorul</button></div>
+                            </div>
+                            <div class="lg:w-96 bg-white rounded-[40px] border shadow-xl flex flex-col">
+                                <div class="p-8 border-b text-xs font-bold uppercase tracking-widest">Notițele mele</div>
+                                <textarea id="course-notes" oninput="saveNotes(this.value)" class="flex-1 p-8 bg-transparent border-none focus:ring-0 resize-none" placeholder="Scrie aici...">${currentNote}</textarea>
+                                <div class="p-4 text-center text-[9px] text-gray-300 font-bold uppercase tracking-widest">Salvat automat local</div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>`;
+        }
+
+        window.setLesson = (i) => { if (i >= 0 && i < 5) { state.course.lessonIndex = i; render(); } };
+        window.saveNotes = (val) => { localStorage.setItem(`notes_${state.user.email}_${state.course.lessonIndex}`, val); };
+
+        function viewTeachers() {
+            return `<div class="pt-40 px-10 max-w-4xl mx-auto animate-fade-up">
+                <h1 class="text-6xl font-bold mb-16 text-center">Profesorii tăi.</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div class="bg-white p-6 border rounded-[40px] text-center"><img src="https://images.unsplash.com/photo-1767610220513-f15c21b53cdb?q=80&w=600" class="w-full h-80 object-cover rounded-[32px] mb-6"><h3 class="text-2xl font-bold">Dr. Barbulat Ștefan</h3><p class="text-blue-500 font-bold text-sm uppercase">Medic rezident neurolog</p></div>
+                    <div onclick="navigateTo('contact')" class="bg-gray-50 p-10 border rounded-[40px] flex flex-col justify-center items-center text-center cursor-pointer hover:bg-white transition-colors"><h3 class="text-2xl font-bold mb-4">Vrei să te alături?</h3><p class="text-gray-500 mb-8">Căutăm profesori de chimie pasionați.</p><span class="text-sm font-bold border-b-2 border-black pb-1">Contactează-ne</span></div>
+                </div>
+            </div>`;
+        }
+
+        function viewContact() {
+            return `<div class="pt-40 px-10 max-w-2xl mx-auto animate-fade-up">
+                <h1 class="text-6xl font-bold mb-10">Contact.</h1>
+                <div class="bg-gray-50 p-12 rounded-[48px] border">
+                    <div class="mb-10"><p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Email suport</p><p class="text-2xl font-bold">dozadebiologie@gmail.com</p></div>
+                    <form onsubmit="event.preventDefault(); alert('Mesaj trimis!'); navigateTo('home')" class="space-y-6">
+                        <input type="text" placeholder="Nume" required class="w-full px-6 py-4 rounded-3xl border-none shadow-sm">
+                        <textarea placeholder="Mesaj" required class="w-full px-6 py-4 rounded-3xl border-none shadow-sm h-32"></textarea>
+                        <button type="submit" class="w-full py-4 bg-[#72f68b] text-black font-bold rounded-3xl shadow-md">Trimite</button>
+                    </form>
+                </div>
+            </div>`;
+        }
+
+        function viewLogin() {
+            return `<div class="min-h-screen flex items-center justify-center bg-[#F8F9FA] p-6 animate-zoom">
+                <div class="max-w-md w-full bg-white rounded-[48px] p-12 shadow-2xl border text-center">
+                    <img src="${DNA_LOGO}" class="w-16 h-16 mx-auto mb-8">
+                    <h1 class="text-3xl font-bold mb-4">Contul tău.</h1>
+                    <p class="text-gray-500 mb-10">Conectează-te cu Google pentru a începe pregătirea.</p>
+                    <div id="google-btn" class="mb-6"></div>
+                    <div class="mb-8 flex items-center gap-4 text-gray-300"><div class="flex-1 border-t"></div>sau<div class="flex-1 border-t"></div></div>
+                    <button onclick="demoLogin()" class="w-full py-4 border rounded-full font-bold text-gray-700 hover:bg-gray-50">Încearcă Demo (Fără cont)</button>
+                </div>
+            </div>`;
+        }
+
+        function viewAccount() {
+            return `<div class="pt-40 px-10 max-w-2xl mx-auto animate-fade-up">
+                <div class="bg-[#EBEEF0] p-12 rounded-[56px] border">
+                    <div class="flex items-center gap-8 mb-12">
+                        <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center text-3xl font-bold text-blue-600 shadow-xl overflow-hidden">
+                            ${state.user.picture ? `<img src="${state.user.picture}" class="w-full h-full object-cover">` : state.user.initials}
+                        </div>
+                        <div><h2 class="text-3xl font-bold">${state.user.name}</h2><p class="text-gray-500">${state.user.email}</p></div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-6 mb-12">
+                        <div class="bg-white p-6 rounded-3xl shadow-sm"><p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Activitate</p><p class="font-bold">Abonament Activ (Acces Complet)</p></div>
+                    </div>
+                    <button onclick="logout()" class="w-full py-4 bg-red-500 text-white font-bold rounded-3xl shadow-lg hover:bg-red-600 transition-all">Ieși din cont</button>
+                    <button onclick="navigateTo('home')" class="w-full mt-4 text-gray-400 font-bold text-sm">Înapoi la platformă</button>
+                </div>
+            </div>`;
+        }
+
+        // --- START ---
+        document.addEventListener('DOMContentLoaded', () => navigateTo('home'));
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
